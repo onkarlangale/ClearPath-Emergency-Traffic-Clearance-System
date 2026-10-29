@@ -1,0 +1,10 @@
+const form = document.getElementById('alertForm');
+const message = document.getElementById('message');
+const list = document.getElementById('alertList');
+const empty = document.getElementById('empty');
+const count = document.getElementById('alertCount');
+const historyCount = document.getElementById('historyCount');
+function escapeHTML(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function render(items){count.textContent=items.length;historyCount.textContent=`${items.length} alert${items.length===1?'':'s'}`;empty.hidden=items.length>0;list.innerHTML=items.map(a=>`<article class="alert"><div class="alerthead"><b>${escapeHTML(a.vehicle)}</b><span class="status">DEMO ONLY</span></div><p class="zone">${escapeHTML(a.zone)}</p><div class="meta"><span>ETA: ${Number(a.etaMinutes)} min</span><span>${escapeHTML(new Date(a.createdAt).toLocaleString())}</span></div>${a.notes?`<p class="zone">${escapeHTML(a.notes)}</p>`:''}</article>`).join('');}
+async function load(){try{const r=await fetch('/api/alerts');if(!r.ok)throw Error();render(await r.json());}catch(e){message.textContent='Could not connect to the demo server. Refresh and try again.';}}
+form.addEventListener('submit',async e=>{e.preventDefault();message.textContent='Creating demo alert...';const btn=document.getElementById('submitBtn');btn.disabled=true;const payload={vehicle:document.getElementById('vehicle').value,zone:document.getElementById('zone').value.trim(),etaMinutes:Number(document.getElementById('eta').value),notes:document.getElementById('notes').value.trim()};try{const r=await fetch('/api/alerts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await r.json();if(!r.ok)throw Error(data.error||'Could not create alert.');message.textContent='Demo alert created successfully.';form.reset();document.getElementById('eta').value=10;await load();}catch(err){message.textContent=err.message;}finally{btn.disabled=false;}});load();

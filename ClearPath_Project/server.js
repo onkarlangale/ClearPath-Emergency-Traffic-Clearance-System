@@ -1,0 +1,22 @@
+const express = require('express');
+const path = require('path');
+const app = express();
+const PORT = process.env.PORT || 10000;
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+const alerts = [];
+let nextId = 1;
+const vehicles = ['Ambulance', 'Fire Engine', 'Police Vehicle'];
+app.get('/api/health', (req, res) => res.json({ status: 'ok', project: 'ClearPath' }));
+app.get('/api/alerts', (req, res) => res.json(alerts.slice().reverse()));
+app.post('/api/alerts', (req, res) => {
+  const { vehicle, zone, etaMinutes, notes } = req.body || {};
+  const eta = Number(etaMinutes);
+  if (!vehicles.includes(vehicle)) return res.status(400).json({ error: 'Choose a valid emergency vehicle.' });
+  if (typeof zone !== 'string' || zone.trim().length < 2 || zone.trim().length > 80) return res.status(400).json({ error: 'Route zone must be 2–80 characters.' });
+  if (!Number.isInteger(eta) || eta < 1 || eta > 240) return res.status(400).json({ error: 'ETA must be a whole number from 1 to 240.' });
+  const alert = { id: nextId++, vehicle, zone: zone.trim(), etaMinutes: eta, notes: typeof notes === 'string' ? notes.trim().slice(0, 200) : '', status: 'Demo alert', createdAt: new Date().toISOString() };
+  alerts.push(alert);
+  res.status(201).json(alert);
+});
+app.listen(PORT, '0.0.0.0', () => console.log(`ClearPath running on port ${PORT}`));
